@@ -1,118 +1,84 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFTMarketplace is ReentrancyGuard {
+contract NFTMarketplace is ERC721, Ownable {
+    uint256 public tokenCounter;
 
     struct Listing {
+        uint256 tokenId;
         address seller;
-        uint256 price; // in wei
+        uint256 price;
     }
 
-    // nft contract => tokenId => listing
-    mapping(address => mapping(uint256 => Listing)) private listings;
+    mapping(uint256 => Listing) public listings;
 
-    // seller address => proceeds amount
-    mapping(address => uint256) private proceeds;
+    event NFTMinted(uint256 tokenId, address owner);
+    event NFTListed(uint256 tokenId, uint256 price);
+    event NFTSold(uint256 tokenId, address buyer, uint256 price);
+    event NFTTransferred(uint256 tokenId, address from, address to);
 
-    /* ========== EVENTS ========== */
-
-    event ItemListed(address indexed nftAddress, uint256 indexed tokenId, address indexed seller, uint256 price);
-    event ItemCanceled(address indexed nftAddress, uint256 indexed tokenId, address indexed seller);
-    event ItemBought(address indexed nftAddress, uint256 indexed tokenId, address indexed buyer, uint256 price);
-
-    /* ========== MODIFIERS ========== */
-
-    modifier notListed(address nftAddress, uint256 tokenId) {
-        Listing memory listing = listings[nftAddress][tokenId];
-        require(listing.price == 0, "Already listed");
-        _;
+    constructor() ERC721("MyNFT", "MNFT") {
+        tokenCounter = 0;
     }
 
-    modifier isListed(address nftAddress, uint256 tokenId) {
-        Listing memory listing = listings[nftAddress][tokenId];
-        require(listing.price > 0, "Not listed");
-        _;
+    // -----------------------
+    // Mint NFT (owner only)
+    // -----------------------
+    function mint(address to) external onlyOwner {
+        tokenCounter += 1;
+        uint256 newTokenId = tokenCounter;
+        _safeMint(to, newTokenId);
+        emit NFTMinted(newTokenId, to);
     }
 
-    modifier isOwner(address nftAddress, uint256 tokenId, address spender) {
-        IERC721 nft = IERC721(nftAddress);
-        require(nft.ownerOf(tokenId) == spender, "Not owner");
-        _;
-    }
-
-    /* ========== MAIN FUNCTIONS ========== */
-
-    /// @notice List an NFT on the marketplace
-    function listItem(
-        address nftAddress,
-        uint256 tokenId,
-        uint256 price
-    )
-        external
-        notListed(nftAddress, tokenId)
-        isOwner(nftAddress, tokenId, msg.sender)
-    {
+    // -----------------------
+    // List NFT for sale
+    // -----------------------
+    function listNFT(uint256 tokenId, uint256 price) external {
+        require(ownerOf(tokenId) == msg.sender, "Not owner");
         require(price > 0, "Price must be > 0");
-        listings[nftAddress][tokenId] = Listing(msg.sender, price);
-        emit ItemListed(nftAddress, tokenId, msg.sender, price);
+
+        listings[tokenId] = Listing(tokenId, msg.sender, price);
+        emit NFTListed(tokenId, price);
     }
 
-    /// @notice Cancel a listing
-    function cancelListing(address nftAddress, uint256 tokenId)
-        external
-        isListed(nftAddress, tokenId)
-        isOwner(nftAddress, tokenId, msg.sender)
-    {
-        delete listings[nftAddress][tokenId];
-        emit ItemCanceled(nftAddress, tokenId, msg.sender);
+    // -----------------------
+    // Buy NFT
+    // -----------------------
+    function buyNFT(uint256 tokenId) external payable {
+        Listing memory listed = listings[tokenId];
+        require(listed.price > 0, "NFT not for sale");
+        require(msg.value >= listed.price, "Not enough ETH");
+
+        // Transfer NFT
+        _transfer(listed.seller, msg.sender, tokenId);
+
+        // Pay seller
+        (bool success, ) = listed.seller.call{value: listed.price}("");
+        require(success, "Payment failed");
+
+        // Remove listing
+        delete listings[tokenId];
+
+        emit NFTSold(tokenId, msg.sender, listed.price);
     }
 
-    /// @notice Buy a listed NFT
-    function buyItem(address nftAddress, uint256 tokenId)
-        external
-        payable
-        nonReentrant
-        isListed(nftAddress, tokenId)
-    {
-        Listing memory listedItem = listings[nftAddress][tokenId];
-        require(msg.value == listedItem.price, "Price not met");
-
-        // record seller proceeds
-        proceeds[listedItem.seller] += msg.value;
-
-        // remove listing before transfer to avoid reentrancy issues
-        delete listings[nftAddress][tokenId];
-
-        // transfer NFT
-        IERC721(nftAddress).safeTransferFrom(listedItem.seller, msg.sender, tokenId);
-
-        emit ItemBought(nftAddress, tokenId, msg.sender, listedItem.price);
+    // -----------------------
+    // Transfer NFT (send to someone)
+    // -----------------------
+    function sendNFT(address to, uint256 tokenId) external {
+        require(ownerOf(tokenId) == msg.sender, "Not owner");
+        _transfer(msg.sender, to, tokenId);
+        emit NFTTransferred(tokenId, msg.sender, to);
     }
 
-    /// @notice Withdraw proceeds from sales
-    function withdrawProceeds() external nonReentrant {
-        uint256 amount = proceeds[msg.sender];
-        require(amount > 0, "No proceeds");
-
-        proceeds[msg.sender] = 0;
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "Transfer failed");
-    }
-
-    /* ========== VIEW FUNCTIONS ========== */
-
-    function getListing(address nftAddress, uint256 tokenId)
-        external
-        view
-        returns (Listing memory)
-    {
-        return listings[nftAddress][tokenId];
-    }
-
-    function getProceeds(address seller) external view returns (uint256) {
-        return proceeds[seller];
+    // -----------------------
+    // View listing
+    // -----------------------
+    function getListing(uint256 tokenId) external view returns (Listing memory) {
+        return listings[tokenId];
     }
 }
