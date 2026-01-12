@@ -1,14 +1,11 @@
 const hre = require("hardhat");
 
 async function main() {
-  // Get the contract factory
   const NFTMarketplace = await hre.ethers.getContractFactory("NFTMarketplace");
-
-  // Deploy the contract
   const nft = await NFTMarketplace.deploy();
-  await nft.deployed();
-
-  console.log("NFTMarketplace deployed to:", nft.address);
+  console.log("Deploying contract...");
+  await nft.waitForDeployment(); // ethers v6 requires waitForDeployment()
+  console.log("NFTMarketplace deployed to:", nft.target);
 }
 
 main()
