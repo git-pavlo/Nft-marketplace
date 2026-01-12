@@ -56,7 +56,7 @@ contract NFTMarketplace is ERC721, Ownable {
         // Transfer NFT
         _transfer(listed.seller, msg.sender, tokenId);
 
-        // Pay seller
+        // Pay seller safely
         (bool success, ) = listed.seller.call{value: listed.price}("");
         require(success, "Payment failed");
 
@@ -67,7 +67,7 @@ contract NFTMarketplace is ERC721, Ownable {
     }
 
     // -----------------------
-    // Transfer NFT (send to someone)
+    // Send NFT to someone
     // -----------------------
     function sendNFT(address to, uint256 tokenId) external {
         require(ownerOf(tokenId) == msg.sender, "Not owner");
@@ -76,9 +76,65 @@ contract NFTMarketplace is ERC721, Ownable {
     }
 
     // -----------------------
-    // View listing
+    // View single listing
     // -----------------------
     function getListing(uint256 tokenId) external view returns (Listing memory) {
         return listings[tokenId];
+    }
+
+    // -----------------------
+    // Delist NFT from sale
+    // -----------------------
+    function delistNFT(uint256 tokenId) external {
+        Listing memory listed = listings[tokenId];
+        require(listed.price > 0, "NFT not listed");
+        require(listed.seller == msg.sender, "Not seller");
+
+        delete listings[tokenId];
+
+        emit NFTListed(tokenId, 0); // optional: price 0 means delisted
+    }
+
+    // -----------------------
+    // MyNFT management functions
+    // -----------------------
+
+    // Get all NFTs owned by a user
+    function getMyNFTs(address user) external view returns (uint256[] memory) {
+        uint256 balance = balanceOf(user);
+        uint256[] memory tokens = new uint256[](balance);
+        uint256 count = 0;
+
+        for (uint256 i = 1; i <= tokenCounter; i++) {
+            if (_exists(i) && ownerOf(i) == user) {
+                tokens[count] = i;
+                count++;
+            }
+        }
+        return tokens;
+    }
+
+    // Get all NFTs listed for sale by a user
+    function getMyListings(address user) external view returns (Listing[] memory) {
+        uint256 total = tokenCounter;
+        uint256 count = 0;
+
+        // Count how many NFTs are listed by this user
+        for (uint256 i = 1; i <= total; i++) {
+            if (listings[i].seller == user) {
+                count++;
+            }
+        }
+
+        Listing[] memory userListings = new Listing[](count);
+        uint256 index = 0;
+        for (uint256 i = 1; i <= total; i++) {
+            if (listings[i].seller == user) {
+                userListings[index] = listings[i];
+                index++;
+            }
+        }
+
+        return userListings;
     }
 }
