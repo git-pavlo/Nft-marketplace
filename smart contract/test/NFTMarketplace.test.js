@@ -1,40 +1,50 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("Token contract", function () {
-  let token, owner, addr1;
+describe("NFTMarketplace", function () {
+  let NFTMarketplace;
+  let nft;
+  let owner;
+  let addr1;
+  let addr2;
 
   beforeEach(async function () {
-    [owner, addr1] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("Token");
-    const initialSupply = ethers.parseEther("1000");
-    token = await Token.deploy(initialSupply);
-    await token.waitForDeployment();
+    [owner, addr1, addr2] = await ethers.getSigners();
+    NFTMarketplace = await ethers.getContractFactory("NFTMarketplace");
+    nft = await NFTMarketplace.deploy();
   });
 
-  it("deploys successfully", async function () {
-    const Marketplace = await ethers.getContractFactory("NFTMarketplace");
-    const marketplace = await Marketplace.deploy();
-    await marketplace.waitForDeployment();
+  it("Should allow owner to mint NFT", async function () {
+    await nft.mint(owner.address);
+    expect(await nft.ownerOf(1)).to.equal(owner.address);
+  });
 
-    expect(await marketplace.getAddress()).to.not.equal(
-      ethers.ZeroAddress
+  it("Should not allow non-owner to mint NFT", async function () {
+    await expect(nft.connect(addr1).mint(addr1.address)).to.be.revertedWith(
+      "Ownable: caller is not the owner"
     );
   });
 
-  it("Should assign the total supply of tokens to the deployer", async function () {
-    const ownerBalance = await token.balanceOf(owner.address);
-    expect(ownerBalance).to.equal(ethers.parseEther("1000"));
+  it("Should list NFT for sale", async function () {
+    await nft.mint(owner.address);
+    await nft.listNFT(1, ethers.parseEther("1"));
+    const listing = await nft.getListing(1);
+    expect(listing.price).to.equal(ethers.parseEther("1"));
+    expect(listing.seller).to.equal(owner.address);
   });
 
-  it("Should transfer tokens between accounts", async function () {
-    await token.transfer(addr1.address, ethers.parseEther("100"));
-    const addr1Balance = await token.balanceOf(addr1.address);
-    expect(addr1Balance).to.equal(ethers.parseEther("100"));
+  it("Should allow buying NFT", async function () {
+    await nft.mint(owner.address);
+    await nft.listNFT(1, ethers.parseEther("1"));
+
+    await nft.connect(addr1).buyNFT(1, { value: ethers.parseEther("1") });
+
+    expect(await nft.ownerOf(1)).to.equal(addr1.address);
   });
 
-  it("Should fail if sender doesn't have enough tokens", async function () {
-    await expect(token.connect(addr1).transfer(owner.address, ethers.parseEther("1000")))
-      .to.be.reverted;
+  it("Should allow sending NFT to another user", async function () {
+    await nft.mint(owner.address);
+    await nft.sendNFT(addr1.address, 1);
+    expect(await nft.ownerOf(1)).to.equal(addr1.address);
   });
 });
