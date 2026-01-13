@@ -1,40 +1,23 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
-const Mint = ({ contract }) => {
-  const [tokenURI, setTokenURI] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function Mint({ contract }) {
+  const [status, setStatus] = useState("");
 
-  const mintNFT = async () => {
-    if (!contract || !tokenURI) return;
-
+  const mint = async () => {
     try {
-      setLoading(true);
-      const tx = await contract.mint(tokenURI);
+      const tx = await contract.mint("ipfs://TEST");
       await tx.wait();
-      alert("NFT Minted!");
-      setTokenURI("");
+      setStatus("Minted ✅");
     } catch (err) {
-      console.error("Mint failed:", err);
-    } finally {
-      setLoading(false);
+      console.error(err);
+      setStatus("Mint failed ❌");
     }
   };
 
   return (
-    <div style={{ padding: "1rem" }}>
-      <h3>Mint NFT (Optional)</h3>
-      <input
-        value={tokenURI}
-        onChange={(e) => setTokenURI(e.target.value)}
-        placeholder="Token URI"
-        style={{ width: "300px" }}
-      />
-      <br />
-      <button onClick={mintNFT} disabled={loading}>
-        {loading ? "Minting..." : "Mint"}
-      </button>
+    <div>
+      <button onClick={mint}>Mint</button>
+      <p>{status}</p>
     </div>
   );
-};
-
-export default Mint;
+}

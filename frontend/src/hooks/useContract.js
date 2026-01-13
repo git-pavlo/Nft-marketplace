@@ -1,17 +1,34 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { ethers } from "ethers";
-import abiJson from "../abi/NFTMarketplace.json";
-import { CONTRACT_ADDRESS } from "../config/contract";
+import ABI from "../contracts/NFTMarketplace.json";
+import { CONTRACT_ADDRESS } from "../constants/contract";
 
-export default function useContract(provider) {
-  return useMemo(() => {
-    if (!provider) return null;
-    if (!ethers.isAddress(CONTRACT_ADDRESS)) return null;
+export default function useContract(account) {
+  const [provider, setProvider] = useState(null);
+  const [signer, setSigner] = useState(null);
+  const [contract, setContract] = useState(null);
 
-    return new ethers.Contract(
-      CONTRACT_ADDRESS,
-      abiJson.abi,
-      provider
-    );
-  }, [provider]);
+  useEffect(() => {
+    if (!window.ethereum || !account) return;
+
+    const init = async () => {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      const contract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        ABI.abi,
+        signer
+      );
+
+      setProvider(provider);
+      setSigner(signer);
+      setContract(contract);
+    };
+
+    init();
+  }, [account]);
+  console.log("Contract loaded:", contract?.target);
+
+  return { provider, signer, contract };
 }
