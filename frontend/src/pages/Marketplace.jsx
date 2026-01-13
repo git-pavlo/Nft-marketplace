@@ -1,57 +1,72 @@
-import { useEffect, useState } from "react";
-import TokenCard from "../components/TokenCard";
-import { getContracts } from "../hooks/useWeb3";
+import React, { useState, useEffect, useCallback } from "react";
+import { ethers } from "ethers";
+import NFTMarketplace from "../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json";
 
-export default function Marketplace() {
+function Marketplace({ contractAddress }) {
+  const [account, setAccount] = useState(null); // optional wallet connection
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  async function load() {
-    const { market } = await getContracts();
-    const listed = [];
-
-    for (let id = 0; id < 50; id++) {
-      try {
-        const l = await market.getListing(
-          import.meta.env.VITE_NFT_ADDRESS,
-          id
-        );
-        if (l.price > 0n) {
-          listed.push({
-            id,
-            name: `Token #${id}`,
-            rank: id % 10,
-            price: Number(l.price) / 1e18,
-            image: `/tokens/${id}.png`,
-          });
-        }
-      } catch {}
+  // Connect wallet (optional)
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      alert("MetaMask not detected!");
+      return;
     }
-    setItems(listed);
-  }
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    setAccount(accounts[0]);
+  };
 
-  async function buy(id, price) {
-    const { market } = await getContracts();
-    await market.buyItem(
-      import.meta.env.VITE_NFT_ADDRESS,
-      id,
-      { value: BigInt(price * 1e18) }
-    );
-    load();
-  }
+  // Load NFTs from contract
+  const loadMarketplace = useCallback(async () => {
+    if (!window.ethereum) return;
 
-  useEffect(() => { load(); }, []);
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const contract = new ethers.Contract(contractAddress, NFTMarketplace.abi, provider);
+      const data = await contract.fetchMarketItems(); // fetch items from contract
+      setItems(data);
+    } catch (err) {
+      console.error("Failed to load marketplace:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [contractAddress]);
+
+  // useEffect calls loadMarketplace safely
+  useEffect(() => {
+    loadMarketplace();
+  }, [loadMarketplace]);
 
   return (
-    <div className="grid">
-      {items.map((t) => (
-        <TokenCard
-          key={t.id}
-          {...t}
-          actions={[
-            { label: "Buy", onClick: () => buy(t.id, t.price) },
-          ]}
-        />
-      ))}
+    <div style={{ padding: "2rem" }}>
+      <h2>NFT Marketplace</h2>
+
+      {!account && (
+        <button onClick={connectWallet} style={{ marginBottom: "1rem" }}>
+          Connect Wallet
+        </button>
+      )}
+
+      {loading ? (
+        <p>Loading NFTs...</p>
+      ) : items.length === 0 ? (
+        <p>No NFTs found.</p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+          {items.map((item, idx) => (
+            <div key={idx} style={{ border: "1px solid #ccc", padding: "1rem", borderRadius: "8px" }}>
+              <p><strong>{item.name || "Unnamed NFT"}</strong></p>
+              <p>Price: {item.price ? ethers.utils.formatEther(item.price) + " ETH" : "N/A"}</p>
+              {/* optional: display image if stored in metadata */}
+              {item.image && <img src={item.image} alt={item.name} style={{ width: "100%", borderRadius: "8px" }} />}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
+export default Marketplace;

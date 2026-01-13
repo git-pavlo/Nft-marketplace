@@ -2,69 +2,65 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("NFTMarketplace Full Flow", function () {
-  let NFTMarketplace;
-  let nft;
-  let owner, addr1, addr2;
+  let nft, owner, user1, user2;
 
   beforeEach(async function () {
-    [owner, addr1, addr2] = await ethers.getSigners();
+    [owner, user1, user2] = await ethers.getSigners();
 
-    NFTMarketplace = await ethers.getContractFactory("NFTMarketplace");
-    nft = await NFTMarketplace.deploy(); // ethers v6 automatically waits
+    // Deploy contract
+    const NFTMarketplace = await ethers.getContractFactory("NFTMarketplace");
+    nft = await NFTMarketplace.deploy(); // ethers v6: no .deployed()
   });
 
   it("Full NFT marketplace workflow", async function () {
-    // ---------- Minting ----------
-    await nft.mint(owner.address);
-    await nft.mint(owner.address);
+    // ----------------------------
+    // Mint NFT (owner only)
+    // ----------------------------
+    await nft.mintNFT("https://token-metadata.com/1");
+    await nft.mintNFT("https://token-metadata.com/2");
+
+    expect(await nft.tokenCounter()).to.equal(2);
     expect(await nft.ownerOf(1)).to.equal(owner.address);
     expect(await nft.ownerOf(2)).to.equal(owner.address);
 
-    // ---------- Listing ----------
-    await nft.listNFT(1, ethers.parseEther("1"));
-    await nft.listNFT(2, ethers.parseEther("2"));
+    // ----------------------------
+    // Owner lists NFT for sale
+    // ----------------------------
+    const price1 = ethers.parseEther("1"); // 1 ETH
+    const price2 = ethers.parseEther("2"); // 2 ETH
 
-    const listing1 = await nft.getListing(1);
-    const listing2 = await nft.getListing(2);
-    expect(listing1.price).to.equal(ethers.parseEther("1"));
-    expect(listing2.price).to.equal(ethers.parseEther("2"));
+    await nft.sellNFT(1, price1);
+    await nft.sellNFT(2, price2);
 
-    // ---------- Buying ----------
-    await nft.connect(addr1).buyNFT(1, { value: ethers.parseEther("1") });
-    expect(await nft.ownerOf(1)).to.equal(addr1.address);
+    expect(await nft.listings(1)).to.equal(price1);
+    expect(await nft.listings(2)).to.equal(price2);
 
-    // ---------- Send NFT ----------
-    await nft.sendNFT(addr2.address, 2);
-    expect(await nft.ownerOf(2)).to.equal(addr2.address);
+    // ----------------------------
+    // User1 buys NFT #1
+    // ----------------------------
+    await nft.connect(user1).buyNFT(1, { value: price1 });
+    expect(await nft.ownerOf(1)).to.equal(user1.address);
+    expect(await nft.listings(1)).to.equal(0);
 
-    // ---------- Delist NFT ----------
-    // First list an NFT for addr1
-    await nft.connect(addr1).listNFT(1, ethers.parseEther("1.5"));
-    let listing = await nft.getListing(1);
-    expect(listing.price).to.equal(ethers.parseEther("1.5"));
+    // ----------------------------
+    // User1 sends NFT #1 to User2
+    // ----------------------------
+    await nft.connect(user1).sendNFT(1, user2.address);
+    expect(await nft.ownerOf(1)).to.equal(user2.address);
 
-    // Then delist it
-    await nft.connect(addr1).delistNFT(1);
-    listing = await nft.getListing(1);
-    expect(listing.price).to.equal(0); // delisted
+    // ----------------------------
+    // Owner delists NFT #2
+    // ----------------------------
+    await nft.delistNFT(2);
+    expect(await nft.listings(2)).to.equal(0);
 
-    // ---------- MyNFTs ----------
+    // ----------------------------
+    // Check myNFTs function
+    // ----------------------------
     const ownerNFTs = await nft.getMyNFTs(owner.address);
-    const addr1NFTs = await nft.getMyNFTs(addr1.address);
-    const addr2NFTs = await nft.getMyNFTs(addr2.address);
+    const user2NFTs = await nft.getMyNFTs(user2.address);
 
-    expect(ownerNFTs.length).to.equal(0); // owner has none left
-    expect(addr1NFTs.length).to.equal(1); // owns NFT 1
-    expect(addr2NFTs.length).to.equal(1); // owns NFT 2
-
-    // ---------- MyListings ----------
-    const addr1Listings = await nft.getMyListings(addr1.address);
-    expect(addr1Listings.length).to.equal(0); // delisted NFT 1
-
-    // Re-list NFT 1 and check MyListings again
-    await nft.connect(addr1).listNFT(1, ethers.parseEther("3"));
-    const updatedListings = await nft.getMyListings(addr1.address);
-    expect(updatedListings.length).to.equal(1);
-    expect(updatedListings[0].price).to.equal(ethers.parseEther("3"));
+    expect(ownerNFTs.map((id) => Number(id))).to.deep.equal([2]);
+    expect(user2NFTs.map((id) => Number(id))).to.deep.equal([1]);
   });
 });
