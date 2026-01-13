@@ -1,19 +1,35 @@
-import { BrowserRouter } from "react-router-dom";
-import Router from "./router";
-import Header from "./components/Header";
-import LeftPanel from "./components/LeftPanel";
-import "./styles/layout.css";
+import React, { useState } from "react";
+import ConnectWallet from "./components/ConnectWallet";
+import useContract from "./hooks/useContract";
 
-export default function App() {
+function App() {
+  const [account, setAccount] = useState(null);
+  const [provider, setProvider] = useState(null);
+
+  const contract = useContract(provider);
+
+  const handleWalletConnected = (account, provider) => {
+    setAccount(account);
+    setProvider(provider);
+  };
+
   return (
-    <BrowserRouter>
-      <div className="app">
-        <img src="/background.png" className="background" />
+    <div style={{ padding: "40px" }}>
+      <h1>NFT Marketplace</h1>
 
-        <Header />
-        <LeftPanel />
-        <Router />
-      </div>
-    </BrowserRouter>
+      {!account ? (
+        <ConnectWallet onConnected={handleWalletConnected} />
+      ) : (
+        <>
+          <p><strong>Wallet:</strong> {account}</p>
+          <p>
+            <strong>Contract loaded:</strong>{" "}
+            {contract ? "YES ✅" : "NO ❌"}
+          </p>
+        </>
+      )}
+    </div>
   );
 }
+
+export default App;
