@@ -1,19 +1,30 @@
-import { useState } from "react";
-import ConnectWallet from "./components/ConnectWallet";
-import useContract from "./hooks/useContract";
-import Mint from "./pages/Mint";
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import MyNFTs from './pages/MyNFTs';
+import MintNFT from './pages/MintNFT';
+import Marketplace from './pages/Marketplace';
+import SendNFT from './pages/SendNFT';
 
 function App() {
   const [account, setAccount] = useState(null);
-  const { contract } = useContract(account);
 
   return (
-    <div>
-      <ConnectWallet setAccount={setAccount} />
-      {account && <p>Connected: {account}</p>}
-      {contract && <Mint contract={contract} />}
-    </div>
+    <Router>
+      <Navbar account={account} setAccount={setAccount} />
+      <div className="p-4">
+        <Routes>
+          <Route path="/" element={<Home account={account} />} />
+          <Route path="/my-nfts" element={<MyNFTs account={account} />} />
+          <Route path="/mint" element={<MintNFT account={account} />} />
+          <Route path="/marketplace" element={<Marketplace account={account} />} />
+          <Route path="/send" element={<SendNFT account={account} />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
-export default App;
+export default App; // ✅ default export
