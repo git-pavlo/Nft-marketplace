@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ethers } from 'ethers';
 import getContract from '../utils/contract';
 import uploadToPinata from '../utils/pinata';
+import loadMyNFTs from './MyNFTs';
+import loadMarketplace from './MyNFTs';
 
 const MintNFT = ({ account }) => {
   const [file, setFile] = useState(null);
@@ -14,13 +16,17 @@ const MintNFT = ({ account }) => {
     setStatus("Uploading to Pinata...");
     try {
       const tokenURI = await uploadToPinata(file, { name });
-
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = getContract(signer);
-
+      
       const tx = await contract.mint(account, tokenURI); // mint accepts tokenURI
+
       await tx.wait();
+
+      await loadMyNFTs();      // refresh owned NFTs
+      await loadMarketplace(); // refresh listings
+
       setStatus("NFT minted successfully!");
     } catch (err) {
       console.error(err);
