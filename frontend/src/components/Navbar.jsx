@@ -14,7 +14,7 @@ const Navbar = ({ account, setAccount }) => {
   };
 
   return (
-    <nav className="flex justify-between items-center p-4 bg-gray-800 text-white">
+    <nav style={styles.nav} className="flex justify-between items-center p-4 bg-gray-800 text-white">
       <div className="flex gap-4">
         <Link to="/" className="hover:text-gray-300">Home</Link>
         <Link to="/my-nfts" className="hover:text-gray-300">My NFTs</Link>
@@ -35,6 +35,16 @@ const Navbar = ({ account, setAccount }) => {
       </div>
     </nav>
   );
+};
+
+const styles = {
+  nav: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "20px",
+    background: "rgba(0,0,0,0.6)",
+    color: "white",
+  },
 };
 
 export default Navbar;
