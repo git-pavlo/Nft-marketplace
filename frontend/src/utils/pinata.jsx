@@ -1,19 +1,37 @@
-import axios from 'axios';
+import axios from "axios";
 
-const uploadToPinata = async (file, metadata) => {
-  const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+const PINATA_API_KEY = process.env.REACT_APP_PINATA_KEY;
+const PINATA_SECRET_KEY = process.env.REACT_APP_PINATA_SECRET;
+
+export const uploadImageToIPFS = async (file) => {
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('pinataMetadata', JSON.stringify({ name: metadata.name }));
+  formData.append("file", file);
 
-  const res = await axios.post(url, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-      Authorization: `Bearer ${process.env.REACT_APP_PINATA_JWT}`,
-    },
-  });
+  const res = await axios.post(
+    "https://api.pinata.cloud/pinning/pinFileToIPFS",
+    formData,
+    {
+      headers: {
+        pinata_api_key: PINATA_API_KEY,
+        pinata_secret_api_key: PINATA_SECRET_KEY,
+      },
+    }
+  );
 
-  return `ipfs://${res.data.IpfsHash}`;
+  return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
 };
 
-export default uploadToPinata; // ✅ default export
+export const uploadMetadataToIPFS = async (metadata) => {
+  const res = await axios.post(
+    "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+    metadata,
+    {
+      headers: {
+        pinata_api_key: PINATA_API_KEY,
+        pinata_secret_api_key: PINATA_SECRET_KEY,
+      },
+    }
+  );
+
+  return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
+};

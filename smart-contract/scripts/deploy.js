@@ -1,16 +1,13 @@
 const hre = require("hardhat");
 
 async function main() {
-  const NFTMarketplace = await hre.ethers.getContractFactory("NFTMarketplace");
-  const nft = await NFTMarketplace.deploy();
-  console.log("Deploying contract...");
-  await nft.waitForDeployment(); // ethers v6 requires waitForDeployment()
-  console.log("NFTMarketplace deployed to:", nft.target);
+  const NFT = await hre.ethers.deployContract("NFTMarketplace");
+  await NFT.waitForDeployment();
+
+  console.log("NFT Marketplace deployed to:", await NFT.getAddress());
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
