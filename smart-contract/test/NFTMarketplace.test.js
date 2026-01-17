@@ -1,44 +1,141 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("NFTMarketplace Full Flow", function () {
-  let nft;
-  let owner, addr1, addr2;
+describe("NFT + Marketplace", function () {
+  let nft, marketplace;
+  let deployer, seller, buyer;
 
-  beforeEach(async function () {
-    [owner, addr1, addr2] = await ethers.getSigners();
-    const NFTMarketplace = await ethers.getContractFactory("NFTMarketplace");
-    nft = await NFTMarketplace.deploy();
+  const URI = "ipfs://test-uri";
+  const PRICE = ethers.parseEther("1");
+
+  beforeEach(async () => {
+    [deployer, seller, buyer] = await ethers.getSigners();
+
+    const NFT = await ethers.getContractFactory("NFT");
+    nft = await NFT.deploy();
     await nft.waitForDeployment();
+
+    const Marketplace = await ethers.getContractFactory("Marketplace");
+    marketplace = await Marketplace.deploy();
+    await marketplace.waitForDeployment();
   });
 
-  it("Full NFT marketplace workflow", async function () {
-    // Mint
-    await nft.mint(owner.address, "ipfs://QmHash1");
-    await nft.mint(owner.address, "ipfs://QmHash2");
+  it("mints NFT with correct owner and tokenURI", async () => {
+    await nft.connect(seller).mint(URI);
 
-    expect(await nft.ownerOf(1)).to.equal(owner.address);
-    expect(await nft.ownerOf(2)).to.equal(owner.address);
+    expect(await nft.ownerOf(1)).to.equal(seller.address);
+    expect(await nft.tokenURI(1)).to.equal(URI);
+  });
 
-    // List
-    await nft.listNFT(1, ethers.parseEther("1"));
-    await nft.listNFT(2, ethers.parseEther("2"));
+  it("lists NFT on marketplace", async () => {
+    await nft.connect(seller).mint(URI);
 
-    // Buy
-    await nft.connect(addr1).buyNFT(1, {
-      value: ethers.parseEther("1"),
+    await nft
+      .connect(seller)
+      .approve(await marketplace.getAddress(), 1);
+
+    await marketplace.connect(seller).listItem(
+      await nft.getAddress(),
+      1,
+      PRICE
+    );
+
+    const listing = await marketplace.allListings(0);
+
+    expect(listing.seller).to.equal(seller.address);
+    expect(listing.price.toString()).to.equal(PRICE.toString());
+    expect(Number(listing.tokenId)).to.equal(1);
+  });
+
+  it("allows buyer to purchase NFT", async () => {
+    await nft.connect(seller).mint(URI);
+
+    await nft
+      .connect(seller)
+      .approve(await marketplace.getAddress(), 1);
+
+    await marketplace.connect(seller).listItem(
+      await nft.getAddress(),
+      1,
+      PRICE
+    );
+
+    await marketplace.connect(buyer).buyItem(0, {
+      value: PRICE,
     });
-    expect(await nft.ownerOf(1)).to.equal(addr1.address);
 
-    // Send (correct order!)
-    await nft.sendNFT(addr2.address, 2);
-    expect(await nft.ownerOf(2)).to.equal(addr2.address);
+    expect(await nft.ownerOf(1)).to.equal(buyer.address);
+  });
 
-    // Delist
-    await nft.connect(addr1).listNFT(1, ethers.parseEther("1.5"));
-    await nft.connect(addr1).delistNFT(1);
+  it("reverts if wrong ETH amount sent", async () => {
+    await nft.connect(seller).mint(URI);
 
-    const listing = await nft.getListing(1);
-    expect(listing.price).to.equal(0n);
+    await nft
+      .connect(seller)
+      .approve(await marketplace.getAddress(), 1);
+
+    await marketplace.connect(seller).listItem(
+      await nft.getAddress(),
+      1,
+      PRICE
+    );
+
+    await expect(
+      marketplace.connect(buyer).buyItem(0, {
+        value: ethers.parseEther("0.5"),
+      })
+    ).to.be.revertedWith("Wrong ETH");
+  });
+
+  it("allows seller to cancel listing", async () => {
+    await nft.connect(seller).mint(URI);
+
+    await nft
+      .connect(seller)
+      .approve(await marketplace.getAddress(), 1);
+
+    await marketplace.connect(seller).listItem(
+      await nft.getAddress(),
+      1,
+      PRICE
+    );
+
+    await marketplace.connect(seller).cancelListing(0);
+
+    expect(await nft.ownerOf(1)).to.equal(seller.address);
+  });
+
+  it("reverts cancel if not seller", async () => {
+    await nft.connect(seller).mint(URI);
+
+    await nft
+      .connect(seller)
+      .approve(await marketplace.getAddress(), 1);
+
+    await marketplace.connect(seller).listItem(
+      await nft.getAddress(),
+      1,
+      PRICE
+    );
+
+    await expect(
+      marketplace.connect(buyer).cancelListing(0)
+    ).to.be.revertedWith("Not seller");
+  });
+
+  it("reverts if listing price is zero", async () => {
+    await nft.connect(seller).mint(URI);
+
+    await nft
+      .connect(seller)
+      .approve(await marketplace.getAddress(), 1);
+
+    await expect(
+      marketplace.connect(seller).listItem(
+        await nft.getAddress(),
+        1,
+        0
+      )
+    ).to.be.revertedWith("Price must be > 0");
   });
 });

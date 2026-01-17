@@ -1,43 +1,30 @@
-import { useState } from "react";
+import { Link } from "react-router-dom"
 
-function Navbar() {
-  const [account, setAccount] = useState("");
-
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      alert("Install MetaMask");
-      return;
-    }
-
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-
-    setAccount(accounts[0]);
-  };
-
+export default function Navbar({ account, connectWallet }) {
   return (
-    <div style={styles.nav}>
-      <h2>OpenSea Clone</h2>
-      <button onClick={connectWallet} style={styles.btn}>
-        {account
-          ? `${account.slice(0, 6)}...${account.slice(-4)}`
-          : "Connect Wallet"}
-      </button>
+    <div className="flex justify-between items-center px-10 py-4 bg-slate-900">
+      <h1 className="text-2xl font-bold text-indigo-400">
+        NFT Marketplace
+      </h1>
+
+      <div className="flex gap-6 items-center">
+        <Link to="/" className="hover:text-indigo-400">Home</Link>
+        <Link to="/mint" className="hover:text-indigo-400">Create</Link>
+        <Link to="/my-nfts" className="hover:text-indigo-400">My NFTs</Link>
+
+        {account ? (
+          <span className="text-green-400">
+            {account.slice(0,6)}...{account.slice(-4)}
+          </span>
+        ) : (
+          <button
+            onClick={connectWallet}
+            className="bg-indigo-600 px-4 py-2 rounded"
+          >
+            Connect
+          </button>
+        )}
+      </div>
     </div>
-  );
+  )
 }
-
-const styles = {
-  nav: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "20px",
-  },
-  btn: {
-    padding: "10px 20px",
-    cursor: "pointer",
-  },
-};
-
-export default Navbar;

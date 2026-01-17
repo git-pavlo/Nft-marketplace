@@ -1,88 +1,46 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
+import NFT from "../abi/NFT.json";
 import axios from "axios";
-import { CONTRACT_ADDRESS, ABI } from "../utils/contract";
 
-function MyNFTs() {
+const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS;
+
+export default function MyNFTs({ account }) {
   const [nfts, setNfts] = useState([]);
-  const [price, setPrice] = useState("");
 
   useEffect(() => {
-    loadMyNFTs();
-  }, []);
+    if (!account) return;
 
-  const loadMyNFTs = async () => {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+    const loadNFTs = async () => {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, NFT.abi, provider);
 
-    const data = await contract.fetchMyNFTs();
+      const balance = await contract.balanceOf(account);
+      let items = [];
 
-    const items = await Promise.all(
-      data.map(async (i) => {
-        const tokenURI = await contract.tokenURI(i.tokenId);
+      for (let i = 0; i < balance; i++) {
+        const tokenId = await contract.tokenOfOwnerByIndex(account, i);
+        const tokenURI = await contract.tokenURI(tokenId);
         const meta = await axios.get(tokenURI);
 
-        return {
-          tokenId: Number(i.tokenId),
-          price: ethers.formatEther(i.price),
-          listed: i.listed,
-          image: meta.data.image,
-          name: meta.data.name,
-          description: meta.data.description,
-        };
-      })
-    );
+        items.push(meta.data);
+      }
 
-    setNfts(items);
-  };
+      setNfts(items);
+    };
 
-  const sellNFT = async (tokenId) => {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-
-    const listingFee = await contract.listingFee();
-
-    const tx = await contract.listNFT(
-      tokenId,
-      ethers.parseEther(price),
-      { value: listingFee }
-    );
-
-    await tx.wait();
-    loadMyNFTs();
-  };
+    loadNFTs();
+  }, [account]);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>My NFTs</h2>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px" }}>
-        {nfts.map((nft) => (
-          <div key={nft.tokenId} style={{ border: "1px solid #ddd", padding: "10px" }}>
-            <img src={nft.image} width="100%" alt="" />
-            <h4>{nft.name}</h4>
-            <p>{nft.description}</p>
-
-            {nft.listed ? (
-              <p><strong>Listed:</strong> {nft.price} ETH</p>
-            ) : (
-              <>
-                <input
-                  placeholder="Price in ETH"
-                  onChange={(e) => setPrice(e.target.value)}
-                />
-                <button onClick={() => sellNFT(nft.tokenId)}>
-                  Sell NFT
-                </button>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
+    <div>
+      {nfts.map((nft, i) => (
+        <div key={i}>
+          <img src={nft.image} alt={nft.name} width="200" />
+          <h3>{nft.name}</h3>
+          <p>{nft.description}</p>
+        </div>
+      ))}
     </div>
   );
 }
-
-export default MyNFTs;
