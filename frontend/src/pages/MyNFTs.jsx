@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from 'react-router-dom'
 import axios from "axios"
 import { ethers } from "ethers"
 import { getNFTContract, getMarketplaceContract } from "../utils/web3"
-import { MARKETPLACE_ADDRESS, NFT_ADDRESS } from "../abi/constants"
+import { MARKETPLACE_ADDRESS, NFT_ADDRESS } from "../utils/constants"
+import NFTCard from "../components/NFTCard"
+import { motion } from "framer-motion"
 
 export default function MyNFTs() {
+  const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [price, setPrice] = useState({})
 
@@ -64,33 +68,42 @@ export default function MyNFTs() {
   }, [])
 
   return (
-    <div className="p-10">
-      <h1 className="text-2xl text-indigo-400 mb-6">My NFTs</h1>
-
-      <div className="grid grid-cols-3 gap-6">
+    <div className="p-10 pt-24">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              textShadow: [
+                "0 0 10px rgba(99,102,241,0.4)",
+                "0 0 20px rgba(168,85,247,0.6)",
+                "0 0 10px rgba(99,102,241,0.4)",
+              ],
+            }}
+            className="
+              text-3xl md:text-5xl font-extrabold mb-12 ml-10 text-center
+              bg-clip-text text-cyan-300
+            "
+          >
+            My NFTs
+          </motion.h1>
+          <hr />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6  p-4 pt-8">
         {items.map(nft => (
-          <div key={nft.id} className="bg-slate-800 p-4 rounded-xl">
-            <img src={nft.image} alt="" className="rounded mb-3" />
-            <h3 className="text-indigo-400">{nft.name}</h3>
-            <p className="text-sm text-gray-400">{nft.description}</p>
-
-            <input
-              placeholder="Price in ETH"
-              className="w-full p-2 mt-3 bg-slate-700 rounded"
-              onChange={e =>
-                setPrice({ ...price, [nft.id]: e.target.value })
-              }
-            />
-
-            <button
-              onClick={() => listNFT(nft.id)}
-              className="w-full mt-3 bg-indigo-600 py-2 rounded"
-            >
-              List for Sale
-            </button>
-          </div>
-        ))}
+          <NFTCard
+            key={nft.id}
+            nft={{
+              ...nft,
+              tokenId: nft.id,
+              setPrice: (id, val) => setPrice({ ...price, [id]: val }),
+              listNFT
+            }}
+            reload={loadMyNFTs}
+            mode="wallet"
+          />
+          ))}
       </div>
+
     </div>
   )
 }

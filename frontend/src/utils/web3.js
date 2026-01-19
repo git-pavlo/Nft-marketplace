@@ -1,5 +1,5 @@
 import { ethers } from "ethers"
-import { NFT_ADDRESS, NFT_ABI, MARKETPLACE_ADDRESS, MARKETPLACE_ABI } from "../abi/constants"
+import { NFT_ADDRESS, NFT_ABI, MARKETPLACE_ADDRESS, MARKETPLACE_ABI } from "./constants"
 
 export async function getProvider() {
   return new ethers.BrowserProvider(window.ethereum)
