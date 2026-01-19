@@ -1,7 +1,7 @@
 import axios from "axios"
 
-const PINATA_API_KEY = process.env.REACT_APP_PINATA_API_KEY;
-const PINATA_SECRET_KEY = process.env.REACT_APP_PINATA_SECRET_API_KEY
+const PINATA_API_KEY = "d2a633329f04dab4521a"
+const PINATA_SECRET_KEY = "5e5296dabf66722297392166591bd27a789807af4b9986dcbc5a7c5ae45ce50d"
 
 const PINATA_GATEWAY = "https://gateway.pinata.cloud/ipfs/"
 
@@ -30,6 +30,7 @@ export async function uploadMetadata(name, description, image) {
     name,
     description,
     image,
+    // category,
   }
 
   const res = await axios.post(
