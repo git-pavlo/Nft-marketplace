@@ -159,8 +159,9 @@ export default function Home() {
         {/* MAIN CONTENT */}
         <main className="flex-1 p-6 pt-0">
 
+
           {/* NFT GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-wrap gap-10  p-4 pt-8">
             {filteredNFTs.length > 0 ? (
               filteredNFTs.map(nft => (
                 <NFTCard

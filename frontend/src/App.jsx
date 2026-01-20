@@ -4,6 +4,7 @@ import { ethers } from "ethers"
 import { AnimatePresence, motion } from "framer-motion"
 
 import Navbar from "./components/Navbar"
+// import Footer from "./components/Footer/Footer"
 import Home from "./pages/Home"
 import Mint from "./pages/Mint"
 import Marketplace from "./pages/Marketplace"
@@ -19,14 +20,14 @@ function AnimatedRoutes() {
         <Route
           path="/"
           element={
-            // <motion.div
-            //   initial={{ opacity: 0, y: 20 }}
-            //   animate={{ opacity: 1, y: 0 }}
-            //   exit={{ opacity: 0, y: -20 }}
-            //   transition={{ duration: 0.3 }}
-            // >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
               <Home />
-            //   </motion.div> 
+            </motion.div> 
           }
         />
 
@@ -103,6 +104,7 @@ function App() {
     <BrowserRouter>
       <Navbar account={account} connectWallet={connectWallet} />
       <AnimatedRoutes />
+      {/* <Footer /> */}
     </BrowserRouter>
   )
 }

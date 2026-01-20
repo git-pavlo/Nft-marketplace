@@ -112,49 +112,68 @@ export default function NFTCard({ nft, reload, mode }) {
     )
   }
 
-  const isOwner =
+  const isOwner1 =
     mode === "market"
       ? account === nft.seller?.toLowerCase()
       : true
+  const isOwner2 =
+    mode === "all"
+      ? account === nft.user?.toLowerCase()
+      : true
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.97 }}
-      className="bg-slate-800 p-3 rounded-xl shadow-xl relative hover:shadow-indigo-500/40 hover:border hover:border-indigo-500 transition-all scale-75"
-    >
-      {/* SOLD badge */}
-      {nft.sold && (
-        <div className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
-          SOLD
-        </div>
-      )}
-
-      {/* OWNED badge */}
-      {isOwner && (
-        <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-3 py-1 rounded-full">
-          Owned
-        </div>
-      )}
-
-      {/* NFT Image */}
-      <div
-        onClick={() => navigate(`/nft/${nft.nftAddress}/${nft.tokenId}`)}
-        className="cursor-pointer"
-      >
-        <div className="mb-3 w-3/4 mx-auto aspect-square overflow-hidden rounded-xl bg-slate-800">
-          <img
-            src={meta.image}
-            className="transition-transform duration-300 hover:scale-110 w-full h-full object-cover"
-          />
-        </div>
+  <motion.div
+    initial={{ opacity: 0, y: 30 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    whileHover={{ scale: 1.03 }}
+    whileTap={{ scale: 0.97 }}
+    className="group bg-slate-800 rounded-2xl shadow-xl relative overflow-hidden scale-75"
+  >
+    {/* SOLD badge */}
+    {nft.sold && (
+      <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-2 py-1 rounded z-20">
+        SOLD
       </div>
+    )}
 
-      <h3 className="text-indigo-400 text-sm md:text-base">NFT #{nft.tokenId} {meta.name}</h3>
-      <p className="text-xs md:text-sm text-gray-400">{meta.description}</p>
+    {/* OWNED badge */}
+    {isOwner2 && (
+      <div className="absolute top-3 right-3 bg-green-600 text-white text-xs px-3 py-1 rounded-full z-20">
+        Mine
+      </div>
+    )}
+
+    {/* IMAGE (LARGER THAN BEFORE) */}
+    {/* IMAGE (FIXED SIZE 300x500, FULL IMAGE DISPLAYED) */}
+  <div
+    onClick={() => navigate(`/nft/${nft.nftAddress}/${nft.tokenId}`)}
+    className="cursor-pointer w-[300px] h-[300px] overflow-hidden flex justify-center items-center"
+  >
+    <img
+      src={meta.image}
+      alt={meta.name}
+      className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+    />
+  </div>
+
+    {/* HOVER OVERLAY (APPEARS ABOVE IMAGE) */}
+    <div className="
+      absolute inset-0 z-10
+      bg-gradient-to-t from-black/90 via-black/70 to-transparent
+      opacity-0 translate-y-6
+      group-hover:opacity-100 group-hover:translate-y-0
+      transition-all duration-300 ease-out
+      flex flex-col justify-end
+      p-4
+    ">
+      <h3 className="text-indigo-400 text-sm md:text-base font-semibold">
+        NFT #{nft.tokenId} {meta.name}
+      </h3>
+
+      <p className="text-xs md:text-sm text-gray-300 line-clamp-2">
+        {meta.description}
+      </p>
 
       {isMarket && (
         <p className="mt-1 text-lg font-bold text-indigo-400">
@@ -164,18 +183,23 @@ export default function NFTCard({ nft, reload, mode }) {
 
       {/* MARKETPLACE MODE */}
       {mode === "market" && (
-        isOwner ? (
+        isOwner1 ? (
           <>
             <input
               type="text"
               placeholder="New price in ETH"
               value={newPrice}
               onChange={(e) => setNewPrice(e.target.value)}
-              className="mt-2 p-2 rounded bg-slate-700 text-white w-[48%] mr-[2%]"
+              className="mt-2 p-2 rounded bg-slate-700 text-white text-sm"
             />
+
             <button
               onClick={updatePrice}
-              className="mt-2 w-[48%] ml-[2%] py-2.5 rounded-xl font-semibold text-black bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-400 shadow-lg shadow-yellow-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-95"
+              className="mt-2 py-2 rounded-xl font-semibold text-black
+              bg-gradient-to-r from-yellow-400 to-amber-500
+              hover:from-amber-500 hover:to-yellow-400
+              shadow-lg shadow-yellow-500/30
+              transition-all hover:scale-[1.02]"
             >
               💰 Change Price
             </button>
@@ -185,7 +209,9 @@ export default function NFTCard({ nft, reload, mode }) {
               disabled={canceling}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`mt-2 w-full py-2 rounded font-bold ${canceling ? "bg-gray-600" : "bg-red-600 hover:bg-red-700"}`}
+              className={`mt-2 py-2 rounded font-bold ${
+                canceling ? "bg-gray-600" : "bg-red-600 hover:bg-red-700"
+              }`}
             >
               {canceling ? "Canceling..." : "Cancel Listing"}
             </motion.button>
@@ -195,7 +221,7 @@ export default function NFTCard({ nft, reload, mode }) {
             onClick={buy}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="mt-3 w-full bg-indigo-600 py-2 rounded font-bold hover:bg-indigo-700"
+            className="mt-3 bg-indigo-600 py-2 rounded font-bold hover:bg-indigo-700"
           >
             Buy
           </motion.button>
@@ -207,17 +233,26 @@ export default function NFTCard({ nft, reload, mode }) {
         <>
           <input
             placeholder="Price in ETH"
-            className="w-full p-2 mt-3 bg-slate-700 rounded text-sm"
+            className="w-full p-2 mt-2 bg-slate-700 rounded text-sm"
             onChange={e => nft.setPrice(nft.tokenId, e.target.value)}
           />
           <button
             onClick={() => nft.listNFT(nft.tokenId)}
-            className="w-full mt-3 bg-indigo-600 py-2 rounded hover:bg-indigo-700 text-sm"
+            className="w-full mt-2 bg-indigo-600 py-2 rounded hover:bg-indigo-700 text-sm"
           >
             List for Sale
           </button>
         </>
       )}
-    </motion.div>
-  )
+
+      {mode === "all" && (
+        <p className="text-xs text-zinc-400 mt-2">
+          Owner: {nft.user.slice(0, 6)}...{nft.user.slice(-4)}
+        </p>
+      )}
+    </div>
+  </motion.div>
+)
+
+
 }

@@ -117,26 +117,10 @@ contract Marketplace {
         emit ListingCancelled(index);
     }
 
-    function updatePrice(uint256 index, uint256 newPrice) external {
-        require(newPrice > 0, "Price must be > 0");
-        require(index < allListings.length, "Invalid index");
-
-        Listing storage item = allListings[index];
-        require(item.seller == msg.sender, "Not seller");
-
-        item.price = newPrice;
-    }
 
     function getAllListings() external view returns (Listing[] memory) {
         return allListings; 
     }
 
-    function getSales() external view returns (Sale[] memory) {
-        return sales;
-    }
-
-    function isSold(address nft, uint256 tokenId) external view returns (bool) {
-    return wasSold[nft][tokenId];
-    }
 
 }
