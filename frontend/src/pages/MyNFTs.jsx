@@ -88,7 +88,7 @@ export default function MyNFTs() {
             My NFTs
           </motion.h1>
           <hr />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6  p-4 pt-8">
+      <div className="flex flex-wrap gap-10  p-4 pt-8">
         {items.map(nft => (
           <NFTCard
             key={nft.id}

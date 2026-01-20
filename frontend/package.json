@@ -17,6 +17,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.12.0",
+    "reactstrap": "^9.2.3",
     "recharts": "^3.6.0",
     "web3.storage": "^4.5.5"
   },
