@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import Navbar from "./components/Navbar"
 import Home from "./pages/Home"
 import Mint from "./pages/Mint"
+import Marketplace from "./pages/Marketplace"
 import MyNFTs from "./pages/MyNFTs.jsx"
 // import NFTDetail from "./pages/NFTDetail.jsx"
 
@@ -30,20 +31,6 @@ function AnimatedRoutes() {
         />
 
         <Route
-          path="/mint"
-          element={
-          //   <motion.div
-          //     initial={{ opacity: 0, x: 50 }}
-          //     animate={{ opacity: 1, x: 0 }}
-          //     exit={{ opacity: 0, x: -50 }}
-          //     transition={{ duration: 0.3 }}
-          //   >
-              <Mint />
-          //   </motion.div>
-          }
-        />
-
-        <Route
           path="/myNfts"
           element={
             // <motion.div
@@ -54,6 +41,34 @@ function AnimatedRoutes() {
             // >
               <MyNFTs />
             // </motion.div>
+          }
+        />
+
+        <Route
+          path="/marketplace"
+          element={
+          //   <motion.div
+          //     initial={{ opacity: 0, x: 50 }}
+          //     animate={{ opacity: 1, x: 0 }}
+          //     exit={{ opacity: 0, x: -50 }}
+          //     transition={{ duration: 0.3 }}
+          //   >
+              <Marketplace />
+          //   </motion.div>
+          }
+        />
+
+        <Route
+          path="/mint"
+          element={
+          //   <motion.div
+          //     initial={{ opacity: 0, x: 50 }}
+          //     animate={{ opacity: 1, x: 0 }}
+          //     exit={{ opacity: 0, x: -50 }}
+          //     transition={{ duration: 0.3 }}
+          //   >
+              <Mint />
+          //   </motion.div>
           }
         />
 

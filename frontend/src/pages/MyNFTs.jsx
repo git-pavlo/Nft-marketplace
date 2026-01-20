@@ -70,16 +70,16 @@ export default function MyNFTs() {
   return (
     <div className="p-10 pt-24">
           <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              textShadow: [
-                "0 0 10px rgba(99,102,241,0.4)",
-                "0 0 20px rgba(168,85,247,0.6)",
-                "0 0 10px rgba(99,102,241,0.4)",
-              ],
-            }}
+            // initial={{ opacity: 0, y: -20 }}
+            // animate={{
+            //   opacity: 1,
+            //   y: 0,
+            //   textShadow: [
+            //     "0 0 10px rgba(99,102,241,0.4)",
+            //     "0 0 20px rgba(168,85,247,0.6)",
+            //     "0 0 10px rgba(99,102,241,0.4)",
+            //   ],
+            // }}
             className="
               text-3xl md:text-5xl font-extrabold mb-12 ml-10 text-center
               bg-clip-text text-cyan-300
