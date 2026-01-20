@@ -1,24 +1,64 @@
 import { NavLink } from "react-router-dom"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
-import Logo from "./Logo"
+// import Logo from "./Logo"
 
 const navItems = [
-  { name: "Home", path: "/" },
-  { name: "Marketplace", path: "/marketplace" },
-  { name: "My NFTs", path: "/myNfts" },
-  { name: "Mint", path: "/mint" },
+  {
+      id: 1,
+      path: "/",
+      name: 'Home',
+      color: 'from-pink-500 to-rose-500',
+    },
+    {
+      id: 2,
+      path: "/myNfts",
+      name: 'My NFT',
+      color: 'from-purple-500 to-indigo-500',
+    },
+    {
+      id: 3,
+      path: "/marketplace",
+      name: 'Marketplace',
+      color: 'from-blue-500 to-cyan-500',
+    },{
+      id: 4,
+      path: "/mint",
+      name: 'Mint',
+      color: 'from-blue-500 to-cyan-500',
+    },
 ]
 
 export default function Navbar() {
   const [account, setAccount] = useState("")
 
-  async function connectWallet() {
-    const [addr] = await window.ethereum.request({
+  const customCss = `
+    @property --angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+
+    @keyframes shimmer-spin {
+      to {
+        --angle: 360deg;
+      }
+    }
+  `;
+
+  
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      alert("Install MetaMask");
+      return;
+    }
+
+    const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
-    })
-    setAccount(addr)
-  }
+    });
+
+    setAccount(accounts[0]);
+  };
 
   useEffect(() => {
     if (!window.ethereum) return
@@ -30,9 +70,9 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 z-50 shadow-xl">
-      <div className="max-w-7xl mx-auto px-6 py-4 grid grid-cols-3 items-center">
+      <div className="max-w-7xl mx-auto px-6 py-4 grid grid-cols-2 items-center">
 
-        <Logo/>
+        {/* <Logo/> */}
         {/* 🔗 Center links */}
         <div className="flex justify-center gap-12">
           {navItems.map((item) => (
@@ -56,6 +96,7 @@ export default function Navbar() {
                     />
                   )}
                 </motion.div>
+                
               )}
             </NavLink>
           ))}
@@ -68,14 +109,20 @@ export default function Navbar() {
               {account.slice(0, 6)}...{account.slice(-4)}
             </div>
           ) : (
-            <motion.button
-              onClick={connectWallet}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-4 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-            >
-              Connect Wallet
-            </motion.button>
+            <>
+            <motion.div className="flex items-center justify-center font-sans">
+              <style>{customCss}</style>
+              <motion.button onClick={connectWallet} className="relative inline-flex items-center justify-center p-[1.5px] bg-gray-300 dark:bg-black rounded-full overflow-hidden group">
+                <div className="absolute inset-0" style={{
+                  background: 'conic-gradient(from var(--angle), transparent 15%, #100cdb, transparent 80%)',
+                  animation: 'shimmer-spin 2.5s linear infinite'
+                }} />
+                <span className="relative z-10 inline-flex items-center justify-center w-full h-full px-4 py-2 text-gray-900 dark:text-white bg-emerald-600 dark:bg-gray-900 rounded-full hover:bg-emerald-700 dark:group-hover:bg-gray-800 transition-colors duration-300 ">
+                  Connect Wallet
+                </span>
+              </motion.button>
+            </motion.div>
+            </>
           )}
         </div>
 
