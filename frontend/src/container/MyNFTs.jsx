@@ -1,63 +1,106 @@
-import { useState } from 'react';
-import { NFT } from '../types/nft';
-import { Aside } from './Aside';
-import { NFTCard } from '../components/NFTCard';
-import { NFTDetail } from './NFTDetail';
-import { AnimatePresence } from 'motion/react';
-import { Package } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Aside } from "./Aside";
+import { NFTCard } from "../components/NFTCard";
+import { NFTDetail } from "./NFTDetail";
+import { AnimatePresence } from "motion/react";
+import { Package } from "lucide-react";
+import { fetchAllNFTs, onSellNFT, onCancelListing } from "../utils/contract";
+import { toast } from "sonner"; // optional for notifications
 
-interface MyNFTsProps {
-  nfts: NFT[];
-  connectedWallet: string;
-  onSellNFT: (nft: NFT, price: number) => void;
-  onCancelListing: (nft: NFT) => void;
-}
+export function MyNFTs({ connectedWallet }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCollection, setSelectedCollection] = useState("All");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [sortBy, setSortBy] = useState("recent");
+  const [selectedNFT, setSelectedNFT] = useState(null);
+  const [nfts, setNFTs] = useState([]); // ✅ Initialize as array
+  const [loading, setLoading] = useState(true);
 
-export function MyNFTs({ nfts, connectedWallet, onSellNFT, onCancelListing }: MyNFTsProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCollection, setSelectedCollection] = useState('All');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [sortBy, setSortBy] = useState<'price' | 'recent'>('recent');
-  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+  // Load NFTs on mount
+  useEffect(() => {
+    const loadNFTs = async () => {
+      try {
+        const allNFTs = await fetchAllNFTs();
+        setNFTs(Array.isArray(allNFTs) ? allNFTs : []); // ✅ Ensure array
+      } catch (err) {
+        console.error("Failed to load NFTs", err);
+        setNFTs([]);
+        toast.error("Failed to load NFTs");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadNFTs();
+  }, []);
 
-  // My NFTs for sale
-  const myListedNFTs = nfts
+  if (loading) {
+    return (
+      <div className="text-center py-12 text-gray-400">Loading NFTs...</div>
+    );
+  }
+
+  // Filter NFTs currently listed for sale
+  const myListedNFTs = (nfts || [])
     .filter((nft) => nft.owner === connectedWallet && nft.forSale)
     .filter((nft) => {
-      const matchesSearch = nft.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = nft.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
       const matchesCollection =
-        selectedCollection === 'All' || nft.collection === selectedCollection;
+        selectedCollection === "All" || nft.collection === selectedCollection;
       const matchesMinPrice = !minPrice || nft.price >= parseFloat(minPrice);
       const matchesMaxPrice = !maxPrice || nft.price <= parseFloat(maxPrice);
-
       return matchesSearch && matchesCollection && matchesMinPrice && matchesMaxPrice;
     })
     .sort((a, b) => {
-      if (sortBy === 'price') {
-        return a.price - b.price;
-      }
-      return b.id.localeCompare(a.id);
+      if (sortBy === "price") return a.price - b.price;
+      return b.id?.toString().localeCompare(a.id?.toString());
     });
 
-  // My NFTs not for sale
-  const myOwnedNFTs = nfts
+  // Filter NFTs owned but not listed
+  const myOwnedNFTs = (nfts || [])
     .filter((nft) => nft.owner === connectedWallet && !nft.forSale)
     .filter((nft) => {
-      const matchesSearch = nft.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = nft.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
       const matchesCollection =
-        selectedCollection === 'All' || nft.collection === selectedCollection;
+        selectedCollection === "All" || nft.collection === selectedCollection;
       const matchesMinPrice = !minPrice || nft.price >= parseFloat(minPrice);
       const matchesMaxPrice = !maxPrice || nft.price <= parseFloat(maxPrice);
-
       return matchesSearch && matchesCollection && matchesMinPrice && matchesMaxPrice;
     })
     .sort((a, b) => {
-      if (sortBy === 'price') {
-        return a.price - b.price;
-      }
-      return b.id.localeCompare(a.id);
+      if (sortBy === "price") return a.price - b.price;
+      return b.id?.toString().localeCompare(a.id?.toString());
     });
+
+  // Sell NFT
+  const handleSellNFT = async (nft, price) => {
+    try {
+      await onSellNFT(nft.tokenId, price.toString());
+      toast.success(`${nft.name} listed for ${price} ETH`);
+      const updatedNFTs = await fetchAllNFTs();
+      setNFTs(Array.isArray(updatedNFTs) ? updatedNFTs : []);
+    } catch (err) {
+      console.error(err);
+      toast.error(`Failed to list ${nft.name}`);
+    }
+  };
+
+  // Cancel NFT listing
+  const handleCancelListing = async (nft) => {
+    try {
+      await onCancelListing(nft.tokenId);
+      toast.info(`${nft.name} listing cancelled`);
+      const updatedNFTs = await fetchAllNFTs();
+      setNFTs(Array.isArray(updatedNFTs) ? updatedNFTs : []);
+    } catch (err) {
+      console.error(err);
+      toast.error(`Failed to cancel listing for ${nft.name}`);
+    }
+  };
 
   return (
     <div className="container mx-auto px-6 py-8">
@@ -95,7 +138,7 @@ export function MyNFTs({ nfts, connectedWallet, onSellNFT, onCancelListing }: My
                     nft={nft}
                     onClick={() => setSelectedNFT(nft)}
                     showCancelButton
-                    onCancel={() => onCancelListing(nft)}
+                    onCancel={() => handleCancelListing(nft)}
                   />
                 ))}
               </div>
@@ -121,7 +164,7 @@ export function MyNFTs({ nfts, connectedWallet, onSellNFT, onCancelListing }: My
                     nft={nft}
                     onClick={() => setSelectedNFT(nft)}
                     showSellButton
-                    onSell={(price) => onSellNFT(nft, price)}
+                    onSell={(price) => handleSellNFT(nft, price)}
                   />
                 ))}
               </div>

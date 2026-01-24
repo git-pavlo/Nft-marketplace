@@ -1,18 +1,5 @@
-import { motion } from 'motion/react';
-import { Badge, ShoppingCart, X, Tag } from 'lucide-react';
-import { NFT } from '../types/nft';
-
-interface NFTCardProps {
-  nft: NFT;
-  onClick: () => void;
-  showBuyButton?: boolean;
-  showSellButton?: boolean;
-  showCancelButton?: boolean;
-  onBuy?: () => void;
-  onSell?: (price: number) => void;
-  onCancel?: () => void;
-  showMineIndicator?: boolean;
-}
+import { motion } from "motion/react";
+import { Badge, ShoppingCart, X, Tag } from "lucide-react";
 
 export function NFTCard({
   nft,
@@ -24,12 +11,12 @@ export function NFTCard({
   onSell,
   onCancel,
   showMineIndicator,
-}: NFTCardProps) {
-  const handleSell = (e: React.FormEvent<HTMLFormElement>) => {
+}) {
+  const handleSell = (e) => {
     e.preventDefault();
     e.stopPropagation();
     const formData = new FormData(e.currentTarget);
-    const price = parseFloat(formData.get('price') as string);
+    const price = parseFloat(formData.get("price"));
     if (price && onSell) {
       onSell(price);
     }
@@ -40,7 +27,7 @@ export function NFTCard({
       className="bg-slate-800/50 rounded-xl overflow-hidden border border-purple-500/20 cursor-pointer group relative"
       whileHover={{
         y: -8,
-        boxShadow: '0 20px 40px rgba(168, 85, 247, 0.3)',
+        boxShadow: "0 20px 40px rgba(168, 85, 247, 0.3)",
       }}
       transition={{ duration: 0.3 }}
       onClick={onClick}
@@ -75,8 +62,6 @@ export function NFTCard({
           </span>
         </div>
 
-        <p className="text-sm text-gray-400 mb-3 line-clamp-2">{nft.description}</p>
-
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-xs text-gray-500">Price</p>
@@ -86,8 +71,12 @@ export function NFTCard({
           </div>
           {!showSellButton && (
             <div>
-              <p className="text-xs text-gray-500">{showBuyButton ? 'Seller' : 'Owner'}</p>
-              <p className="text-sm text-gray-300">{showBuyButton ? nft.seller : nft.owner}</p>
+              <p className="text-xs text-gray-500">
+                {showBuyButton ? "Seller" : "Owner"}
+              </p>
+              <p className="text-sm text-gray-300">
+                {showBuyButton ? nft.seller : nft.owner}
+              </p>
             </div>
           )}
         </div>
@@ -109,7 +98,7 @@ export function NFTCard({
 
         {showSellButton && (
           <form onSubmit={handleSell} onClick={(e) => e.stopPropagation()}>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <input
                 type="number"
                 name="price"
