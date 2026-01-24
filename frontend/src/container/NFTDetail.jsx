@@ -1,13 +1,9 @@
-import { motion } from 'motion/react';
-import { X, Calendar, ArrowRight } from 'lucide-react';
-import { NFT } from '../types/nft';
+import { motion } from "motion/react";
+import { X, Calendar, ArrowRight } from "lucide-react";
 
-interface NFTDetailProps {
-  nft: NFT;
-  onClose: () => void;
-}
+export function NFTDetail({ nft, onClose }) {
+  const transactions = nft.transactionHistory || [];
 
-export function NFTDetail({ nft, onClose }: NFTDetailProps) {
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-6"
@@ -23,6 +19,7 @@ export function NFTDetail({ nft, onClose }: NFTDetailProps) {
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-purple-500/20">
           <h2 className="text-2xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
             NFT Details
@@ -49,13 +46,16 @@ export function NFTDetail({ nft, onClose }: NFTDetailProps) {
           {/* Right: Details */}
           <div className="space-y-6">
             <div>
-              <p className="text-sm text-gray-500 mb-1">{nft.tokenId}</p>
+              <p className="text-sm text-gray-500 mb-1">
+                Token #{nft.tokenId}
+              </p>
               <h1 className="text-3xl mb-2">{nft.name}</h1>
               <span className="inline-block px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 text-sm">
                 {nft.collection}
               </span>
             </div>
 
+            {/* Price */}
             <div className="p-4 bg-slate-900/50 rounded-lg border border-purple-500/20">
               <p className="text-sm text-gray-400 mb-1">Current Price</p>
               <p className="text-3xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -63,54 +63,71 @@ export function NFTDetail({ nft, onClose }: NFTDetailProps) {
               </p>
             </div>
 
+            {/* Description */}
             <div>
               <h3 className="text-sm text-gray-400 mb-2">Description</h3>
               <p className="text-gray-300">{nft.description}</p>
             </div>
 
+            {/* Owner / Seller */}
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-slate-900/50 rounded-lg border border-purple-500/20">
                 <p className="text-sm text-gray-400 mb-1">Owner</p>
-                <p className="text-white">{nft.owner}</p>
+                <p className="text-white truncate">{nft.owner}</p>
               </div>
+
               {nft.seller && (
                 <div className="p-4 bg-slate-900/50 rounded-lg border border-purple-500/20">
                   <p className="text-sm text-gray-400 mb-1">Seller</p>
-                  <p className="text-white">{nft.seller}</p>
+                  <p className="text-white truncate">{nft.seller}</p>
                 </div>
               )}
             </div>
 
             {/* Transaction History */}
-            <div>
-              <h3 className="text-sm text-gray-400 mb-3">Transaction History</h3>
-              <div className="space-y-2">
-                {nft.transactionHistory.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="p-3 bg-slate-900/50 rounded-lg border border-purple-500/20 flex items-center gap-3"
-                  >
-                    <div className="p-2 bg-purple-500/20 rounded-lg">
-                      {tx.type === 'mint' && <Calendar className="w-4 h-4 text-purple-400" />}
-                      {tx.type === 'sale' && <ArrowRight className="w-4 h-4 text-green-400" />}
-                      {tx.type === 'transfer' && <ArrowRight className="w-4 h-4 text-blue-400" />}
+            {transactions.length > 0 && (
+              <div>
+                <h3 className="text-sm text-gray-400 mb-3">
+                  Transaction History
+                </h3>
+
+                <div className="space-y-2">
+                  {transactions.map((tx, index) => (
+                    <div
+                      key={index}
+                      className="p-3 bg-slate-900/50 rounded-lg border border-purple-500/20 flex items-center gap-3"
+                    >
+                      <div className="p-2 bg-purple-500/20 rounded-lg">
+                        {tx.type === "mint" && (
+                          <Calendar className="w-4 h-4 text-purple-400" />
+                        )}
+                        {(tx.type === "sale" || tx.type === "transfer") && (
+                          <ArrowRight className="w-4 h-4 text-green-400" />
+                        )}
+                      </div>
+
+                      <div className="flex-1">
+                        <p className="text-sm capitalize text-white">
+                          {tx.type}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          From {tx.from} → {tx.to}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        {tx.price && (
+                          <p className="text-sm text-purple-400">
+                            {tx.price} ETH
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500">{tx.date}</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm capitalize text-white">{tx.type}</p>
-                      <p className="text-xs text-gray-400">
-                        From {tx.from} → {tx.to}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      {tx.price && (
-                        <p className="text-sm text-purple-400">{tx.price} ETH</p>
-                      )}
-                      <p className="text-xs text-gray-500">{tx.date}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </motion.div>
