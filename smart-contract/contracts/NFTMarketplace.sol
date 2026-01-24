@@ -7,6 +7,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract NFTMarketplace is ERC721URIStorage, Ownable {
     uint256 private _tokenIds;
 
+    event NFTMinted(uint256 tokenId, address owner);
+    event NFTListed(uint256 tokenId, address seller, uint256 price);
+    event NFTSold(uint256 tokenId, address seller, address buyer, uint256 price);
+    event NFTTransferred(uint256 tokenId, address from, address to);
+
+
     struct NFTItem {
         uint256 tokenId;
         address payable seller;

@@ -128,7 +128,7 @@ export function Mint({ connectedWallet, onMintNFT }) {
             <div>
               <label className="block text-sm text-gray-400 mb-2">Collection *</label>
               <select
-                value={collection}
+                // value={collection}
                 onChange={(e) => setCollection(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-800/50 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
               >
