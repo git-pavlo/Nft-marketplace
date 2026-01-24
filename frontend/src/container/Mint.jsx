@@ -1,69 +1,69 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Upload, Loader2, CheckCircle } from 'lucide-react';
-import { NFT } from '../types/nft';
+import { uploadImageToIPFS, uploadMetadataToIPFS } from "../utils/ipfs";
+import { getContract } from "../utils/contract";
 
-interface MintProps {
-  connectedWallet: string;
-  onMintNFT: (nft: Omit<NFT, 'id' | 'tokenId' | 'transactionHistory'>) => void;
-}
-
-export function Mint({ connectedWallet, onMintNFT }: MintProps) {
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
+export function Mint({ connectedWallet, onMintNFT }) {
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [name, setName] = useState('');
-  const [collection, setCollection] = useState<'Artwork' | 'Portrait' | 'Animal' | 'Other'>(
-    'Artwork'
-  );
+  const [collection, setCollection] = useState('Artwork');
   const [description, setDescription] = useState('');
-  const [isMinting, setIsMinting] = useState(false);
-  const [mintSuccess, setMintSuccess] = useState(false);
+  // const [isMinting, setIsMinting] = useState(false);
+  // const [mintSuccess, setMintSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
+      setImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!imagePreview || !name || !description) return;
+  async function handleMint() {
+    try {
+      if (!image || !name) return alert("Missing fields");
 
-    setIsMinting(true);
+      setLoading(true);
+      setStatus("Uploading image to IPFS...");
 
-    // Simulate minting process
-    setTimeout(() => {
-      onMintNFT({
+      const imageURI = await uploadImageToIPFS(image);
+
+      console.log(imageURI);
+      const metadata = {
         name,
-        collection,
         description,
+        image: imageURI,
         price: 0,
-        image: imagePreview,
-        owner: connectedWallet,
-        forSale: false,
-        seller: undefined,
-      });
+        attributes: [
+          { trait_type: "Collection", value: collection }
+        ],
+      };
 
-      setIsMinting(false);
-      setMintSuccess(true);
+      setStatus("Uploading metadata to IPFS...");
+      const metadataURI = await uploadMetadataToIPFS(metadata);
 
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        setMintSuccess(false);
-        setImageFile(null);
-        setImagePreview('');
-        setName('');
-        setDescription('');
-        setCollection('Artwork');
-      }, 2000);
-    }, 2000);
-  };
+      setStatus("Minting NFT...");
+      const contract = await getContract();
+
+      const tx = await contract.mintNFT(metadataURI);
+      await tx.wait();
+
+      setStatus("🎉 NFT Minted Successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Mint failed");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="container mx-auto px-6 py-8">
@@ -71,7 +71,7 @@ export function Mint({ connectedWallet, onMintNFT }: MintProps) {
         Mint New NFT
       </h2>
 
-      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+      <form className="max-w-4xl mx-auto">
         <div className="grid md:grid-cols-2 gap-8">
           {/* Left: Image Upload */}
           <div>
@@ -100,7 +100,7 @@ export function Mint({ connectedWallet, onMintNFT }: MintProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    setImageFile(null);
+                    setImage(null);
                     setImagePreview('');
                   }}
                   className="absolute top-3 right-3 p-2 bg-red-600/80 hover:bg-red-600 rounded-lg transition-colors"
@@ -129,9 +129,7 @@ export function Mint({ connectedWallet, onMintNFT }: MintProps) {
               <label className="block text-sm text-gray-400 mb-2">Collection *</label>
               <select
                 value={collection}
-                onChange={(e) =>
-                  setCollection(e.target.value as 'Artwork' | 'Portrait' | 'Animal' | 'Other')
-                }
+                onChange={(e) => setCollection(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-800/50 border border-purple-500/30 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
               >
                 <option value="Artwork">Artwork</option>
@@ -153,27 +151,14 @@ export function Mint({ connectedWallet, onMintNFT }: MintProps) {
               />
             </div>
 
-            <motion.button
-              type="submit"
-              disabled={!imagePreview || !name || !description || isMinting || mintSuccess}
+            <button
+              onClick={handleMint}  disabled={loading}
               className="w-full py-4 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-              whileHover={{ scale: !imagePreview || !name || !description || isMinting || mintSuccess ? 1 : 1.02 }}
-              whileTap={{ scale: !imagePreview || !name || !description || isMinting || mintSuccess ? 1 : 0.98 }}
             >
-              {isMinting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Minting...
-                </>
-              ) : mintSuccess ? (
-                <>
-                  <CheckCircle className="w-5 h-5" />
-                  Successfully Minted!
-                </>
-              ) : (
-                'Mint NFT'
-              )}
-            </motion.button>
+              {loading ? "Minting..." : "Mint NFT"}
+            </button>
+
+            {status && <p>{status}</p>}
 
             {!imagePreview && (
               <p className="text-sm text-gray-500 text-center">
