@@ -113,3 +113,84 @@ export async function buyNFT(tokenId, price) {
 
   await tx.wait();
 }
+
+async function getProvider() {
+  if (!window.ethereum) throw new Error("MetaMask not installed");
+  return new ethers.BrowserProvider(window.ethereum);
+}
+
+export async function getTransactionHistory(tokenId) {
+  const provider = await getProvider();
+  const contract = new ethers.Contract(
+    CONTRACT_ADDRESS,
+    NFTMarketplace.abi,
+    provider
+  );
+
+  const currentBlock = await provider.getBlockNumber();
+
+  const history = [];
+
+  // 🔹 ERC721 Transfers
+  const transferEvents = await contract.queryFilter(
+    contract.filters.Transfer(null, null, tokenId),
+    0,
+    currentBlock
+  );
+
+  for (const event of transferEvents) {
+    const block = await provider.getBlock(event.blockNumber);
+
+    history.push({
+      type: event.args.from === ethers.ZeroAddress ? "mint" : "transfer",
+      from: event.args.from,
+      to: event.args.to,
+      date: new Date(block.timestamp * 1000).toLocaleString(),
+    });
+  }
+
+  // 🔹 NFT Listed
+  if (contract.filters.NFTListed) {
+    const listedEvents = await contract.queryFilter(
+      contract.filters.NFTListed(tokenId),
+      0,
+      currentBlock
+    );
+
+    for (const event of listedEvents) {
+      const block = await provider.getBlock(event.blockNumber);
+
+      history.push({
+        type: "sale",
+        from: event.args.seller,
+        to: "Marketplace",
+        price: ethers.formatEther(event.args.price),
+        date: new Date(block.timestamp * 1000).toLocaleString(),
+      });
+    }
+  }
+
+  // 🔹 NFT Sold
+  if (contract.filters.NFTSold) {
+    const soldEvents = await contract.queryFilter(
+      contract.filters.NFTSold(tokenId),
+      0,
+      currentBlock
+    );
+
+    for (const event of soldEvents) {
+      const block = await provider.getBlock(event.blockNumber);
+
+      history.push({
+        type: "sale",
+        from: event.args.seller,
+        to: event.args.buyer,
+        price: ethers.formatEther(event.args.price),
+        date: new Date(block.timestamp * 1000).toLocaleString(),
+      });
+    }
+  }
+
+  // Sort oldest → newest
+  return history.sort((a, b) => new Date(a.date) - new Date(b.date));
+}

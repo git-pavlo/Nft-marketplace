@@ -1,8 +1,26 @@
 import { motion } from "motion/react";
 import { X, Calendar, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getTransactionHistory } from "../utils/contract";
 
 export function NFTDetail({ nft, onClose }) {
-  const transactions = nft.transactionHistory || [];
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTx, setLoadingTx] = useState(true);
+
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const txs = await getTransactionHistory(nft.tokenId);
+        setTransactions(txs);
+      } catch (err) {
+        console.error("Failed to load transaction history", err);
+      } finally {
+        setLoadingTx(false);
+      }
+    }
+
+    loadHistory();
+  }, [nft.tokenId]);
 
   return (
     <motion.div

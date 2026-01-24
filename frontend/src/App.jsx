@@ -7,7 +7,6 @@ import { Marketplace } from './container/Marketplace';
 import { MyNFTs } from './container/MyNFTs';
 import { Mint } from './container/Mint';
 import { Footer } from './components/Footer';
-import { mockNFTs } from './data/mockNFTs';
 import { motion } from 'motion/react';
 import { toast, Toaster } from 'sonner@2.0.3';
 import { useAccount, useDisconnect } from "wagmi";
