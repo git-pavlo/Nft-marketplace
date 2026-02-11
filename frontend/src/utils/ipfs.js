@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const PINATA_API_KEY = "d2a633329f04dab4521a";
-const PINATA_SECRET_API_KEY = "5e5296dabf66722297392166591bd27a789807af4b9986dcbc5a7c5ae45ce50d";
+const PINATA_API_KEY = "18233f0e183ee1001af1";
+const PINATA_SECRET_API_KEY = "f1a15a17e13a181c164df487dc382ac695bdcea8e1edf97b8dfa403148102022";
 
 export async function uploadImageToIPFS(file) {
   const formData = new FormData();

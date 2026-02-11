@@ -4,7 +4,7 @@ import { Upload, Loader2, CheckCircle } from 'lucide-react';
 import { uploadImageToIPFS, uploadMetadataToIPFS } from "../utils/ipfs";
 import { getContract } from "../utils/contract";
 
-export function Mint({ connectedWallet, onMintNFT }) {
+export function Mint() {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [name, setName] = useState('');
@@ -41,7 +41,6 @@ export function Mint({ connectedWallet, onMintNFT }) {
         name,
         description,
         image: imageURI,
-        price: 0,
         attributes: [
           { trait_type: "Collection", value: collection }
         ],

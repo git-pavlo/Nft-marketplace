@@ -8,10 +8,10 @@ const onLogoClick = () => {
 };
 
 export function Header({
-  isConnected,
-  walletAddress,
-  onConnect,
-  onDisconnect,
+  // isConnected,
+  // walletAddress,
+  // onConnect,
+  // onDisconnect,
 
 }) {
   return (
